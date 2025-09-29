@@ -156,8 +156,15 @@ function(lat = NULL, lon = NULL, shape = NULL, fips = NULL, buffer = 3, res) {
     return(result)
   }
   
+  # Get submitted polygon shape to appear in report map.
+  to_map<-NULL # Clear any previous maps
+  if (method == "SHP"){
+    to_map<-geojson_sf(area) # TBD: get this returned from ejamit_interface
+    to_map$ejam_uniq_id <- 1 # Might run into issues here for multisite reports
+  }
+  
   # Generate and return the HTML report.
-  ejam2report(result, sitenumber = 1, return_html = TRUE, launch_browser = FALSE, submitted_upload_method = method)
+  ejam2report(result, sitenumber = 1, return_html = TRUE, launch_browser = FALSE, submitted_upload_method = method, shp=to_map)
 }
 
 #* Serve static assets from the ./assets directory
