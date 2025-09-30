@@ -1,5 +1,5 @@
 # Based on https://github.com/petegordon/RCloudRun
-# start from the rocker/r-ver:4.3 image
+# start from the rocker/r-ver:4.1 image
 FROM rocker/r-ver:4.1
 
 ENV DEBIAN_FRONTEND="noninteractive" TZ="America/Chicago"

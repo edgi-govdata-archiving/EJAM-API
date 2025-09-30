@@ -3,4 +3,6 @@
 .RData
 .Ruserdata
 EJAM-API.Rproj
-/tests
+*.cfg
+*.tmpl
+*.pyc

@@ -44,6 +44,7 @@ fipper <- function(area, scale = "blockgroup") {
 # handling various input methods such as latitude/longitude, shapes (SHP), and FIPS codes.
 ejamit_interface <- function(area, method, buffer = 0, scale = "blockgroup", endpoint="report") {
   # Validate buffer size to ensure it's within a reasonable limit.
+
   if (!is.numeric(buffer) || buffer > 15) {
     stop("Please select a buffer of 15 miles or less.")
   }
@@ -136,7 +137,7 @@ function(lat = NULL, lon = NULL, shape = NULL, fips = NULL, buffer = 3, res) {
   # Determine the input method and prepare the area.
   method <- if (!is.null(lat) && !is.null(lon)) "latlon" else if (!is.null(shape)) "SHP" else if (!is.null(fips)) "FIPS" else NULL
   area <- if (method == "latlon") data.frame(lat = as.numeric(lat), lon = as.numeric(lon)) else shape %||% fips
-  
+
   if (is.null(method) || is.null(area)) {
     res$status <- 400
     return(handle_error("You must provide valid coordinates, a shape, or a FIPS code.", "html"))
@@ -150,7 +151,7 @@ function(lat = NULL, lon = NULL, shape = NULL, fips = NULL, buffer = 3, res) {
       handle_error(e$message, "html")
     }
   )
-  
+
   # If an error occurred during the analysis, return the error message.
   if (is.character(result)) {
     return(result)
