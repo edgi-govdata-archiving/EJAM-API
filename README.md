@@ -12,11 +12,11 @@ There are currently two endpoints for the API.
 `report` accepts GET requests with the following parameters:
 - `lat` - the latitude of a given point, or comma-separated list like lat=33,32.5
 - `lon` - the longitude
-- `fips` - A FIPS code for a specific US Census geography, like fips=10 for one state, or comma-separated list like fips=10001,10003,10005 for 3 counties
+- `fips` - A FIPS code for a specific US Census geography, like fips=10 for one state or fips=10001 for a county
 - `shape` - a GeoJSON text-encoded object describing an area of interest, such as a polygon of neighborhood boundaries
-- `buffer` - radius, in miles, around a point or out from the edge of a polygon to extend the search. EJAM default = 3. *Note: adding buffers around fips units may not be implemented yet.
+- `buffer` - radius, in miles, around a point or out from the edge of a polygon to extend the search. EJAM default = 3 but can be explicitly set to 0.
 
-`report` expects either `lat`/`lon` OR `shape` OR `fips`. The default buffer around a point is 3 miles but can be explicitly set to 0.
+`report` expects either `lat`/`lon` OR `shape` OR `fips`.
 An HTML format of a report is returned.
 
 ### Examples
