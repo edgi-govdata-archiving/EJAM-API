@@ -33,10 +33,10 @@ RUN R -e "install.packages(c('remotes', 'plumber'), repos=c('https://packagemana
 
 ## Get EJAM R package (e.g., v2.32.6)
 ## see https://github.com/ejanalysis/EJAM/releases/latest
-RUN wget -c https://github.com/ejanalysis/EJAM/archive/refs/tags/v2.32.6.001.tar.gz -O - | tar -xz
+RUN wget -c https://github.com/ejanalysis/EJAM/archive/refs/tags/v2.32.6.002.tar.gz -O - | tar -xz
 
 ## Install EJAM R package (e.g., v2.32.6)
-RUN R -e "remotes::install_local('/EJAM-2.32.6.001', upgrade='always', build=FALSE, dependencies=TRUE, repos=c('https://packagemanager.rstudio.com/all/__linux__/focal/latest', 'https://mirror.csclub.uwaterloo.ca/CRAN/'), INSTALL_opts=c('--preclean', '--no-multiarch', '--with-keep.source'))" 
+RUN R -e "remotes::install_local('/EJAM-2.32.6.002', upgrade='always', build=FALSE, dependencies=TRUE, repos=c('https://packagemanager.rstudio.com/all/__linux__/focal/latest', 'https://mirror.csclub.uwaterloo.ca/CRAN/'), INSTALL_opts=c('--preclean', '--no-multiarch', '--with-keep.source'))" 
 
 # Copy into the container
 COPY / /

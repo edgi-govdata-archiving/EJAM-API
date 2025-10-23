@@ -125,6 +125,92 @@ function(sites = NULL, shape = NULL, fips = NULL, buffer = 0, geometries = FALSE
   }
 }
 
+
+shapefile_addcols <- function(shp, addthese = c('fipstype', 'pop', 'NAME', 'STATE_ABBR', 'STATE_NAME', 'SQMI', 'POP_SQMI'),
+                              fipscolname = "FIPS", popcolname = "pop", overwrite = FALSE) {
+  if (!overwrite) {
+    addthese <- setdiff(addthese, colnames(shp))
+  }
+
+  # figure out the FIPS column, get it as a vector
+  if (fipscolname %in% colnames(shp)) {
+    fipsvector <- as.vector(sf::st_drop_geometry(shp)[, fipscolname]) # fipscolname was found
+  } else {
+    if ("fips" %in% fipscolname) {
+      fipsvector <- as.vector(sf::st_drop_geometry(shp)[, 'fips']) # use "fips" lowercase since cant find fipscolname
+    } else {
+      if ("fips" %in% EJAM:::fixnames_aliases(colnames(shp))) {  # use 1st column that is an alias for fips
+        warning(fipscolname, "is not a column name in shp, so using a column that seems to be an alias for FIPS")
+        fipsvector <- as.vector(sf::st_drop_geometry(shp)[, which(fixnames_aliases(colnames(shp)) == "fips")[1]])
+      } else {
+        warning("cannnot find a column that can be identified as the FIPS, so using NA for columns like STATE_ABBR or STATE_NAME")
+        fipsvector <- rep(NA, nrow(shp)) # NA for all rows
+      }
+    }
+  }
+
+  ftype <- EJAM:::fipstype(fipsvector)
+
+  if ('fipstype' %in% addthese) {
+    shp$fipstype <- EJAM:::fipstype(fipsvector) # NA if fips is NA
+  }
+
+  if ('NAME' %in% addthese) {
+    shp$NAME <- EJAM:::fips2name(fipsvector) # NA if fips is NA
+    
+  }
+
+  if ('STATE_ABBR' %in% addthese) {
+    shp$STATE_ABBR <- EJAM:::fips2state_abbrev(fipsvector) # NA if fips is NA
+    
+  }
+
+  if ('STATE_NAME' %in% addthese) {
+    shp$STATE_NAME <- EJAM:::fips2statename(fipsvector) # NA if fips is NA
+    
+  }
+
+  if ('pop' %in% addthese) {
+    shp$pop <- EJAM:::fips2pop(fipsvector) # NA for city type
+    
+  }
+
+  if ('SQMI' %in% addthese) {
+    areas <- rep(NA, length(fipsvector))
+    made_of_bgs <- EJAM:::fipstype(fipsvector) %in% c("state", "county", "tract", "blockgroup") # not block, not city - for blocks, see  ?tigris::block_groups()
+
+    myfunction = function(f1) {
+      sum( blockgroupstats[blockgroupstats$bgfips %in% EJAM:::fips_bgs_in_fips1(f1), arealand], na.rm = TRUE)
+    }
+    areas_sqmeters <- sapply(fipsvector[made_of_bgs], FUN = myfunction)
+
+    areas_sqmi <- EJAM:::convert_units(areas_sqmeters, from = "sqmeter", towhat = "sqmi")
+    
+    shp$SQMI<-areas_sqmi
+    #shp$SQMI <- EJAM:::area_sqmi_from_fips(fipsvector, download_city_fips_bounds = FALSE, download_noncity_fips_bounds = FALSE)
+    #shp$SQMI[ftype %in% "city" & !is.na(ftype)] <- EJAM:::area_sqmi_from_shp(shp[ftype %in% "city" & !is.na(ftype), ]) # *** check the numbers
+    shp$SQMI <- round(shp$SQMI, 2)
+  }
+
+  if ('POP_SQMI' %in% addthese) {
+    if ('SQMI' %in% colnames(shp)) {
+      sqmi = shp$SQMI
+    } else {
+      sqmi = EJAM:::area_sqmi_from_shp(shp)
+    }
+    if (popcolname %in% colnames(shp)) {
+      pop = as.vector(sf::st_drop_geometry(shp)[, popcolname])
+      shp$POP_SQMI <- ifelse(sqmi == 0, NA, pop / sqmi)
+      shp$POP_SQMI <- round(shp$POP_SQMI, 2)
+    } else {
+      warning("Cannot find a column that can be identified as the population, so using NA for POP_SQMI")
+      shp$POP_SQMI <- NA
+    }
+  }
+
+  return(shp)
+}
+
 #* Generate an EJAM report in HTML format
 #* @param lat Latitude of the site
 #* @param lon Longitude of the site
@@ -156,16 +242,56 @@ function(lat = NULL, lon = NULL, shape = NULL, fips = NULL, buffer = 3, res) {
   if (is.character(result)) {
     return(result)
   }
-  
-  # Get submitted polygon shape to appear in report map.
+
+  # Prepare report.
   to_map<-NULL # Clear any previous maps
+
+  if (method=="FIPS"){
+    # In the case of states and counties we need special handling
+    # Do this based on character count of FIPS
+    # Note we are not validating FIPS :(
+    if (nchar(area)==2){
+      # State
+      fips<-area
+      shp <- states_shapefile[match(fips, states_shapefile$GEOID), ]
+      shp$FIPS <- shp$GEOID
+
+      shp <- EJAM:::shapefile_dropcols(shp)
+      shp <- shapefile_addcols(shp) # Use shapefile_addcols() above
+      shp <- EJAM:::shapefile_sortcols(shp)
+
+      to_map<-shp
+    }
+    if (nchar(area)==5){
+      # County
+      fips<-area
+      request_start<-'https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Boundaries_2022/FeatureServer/2/query?where=FIPS%3D%27'
+      request_end<-'%27&outFields=NAME%2CFIPS%2CSTATE_ABBR%2CSTATE_NAME&returnGeometry=true&f=geojson'
+      request<-paste0(request_start, fips, request_end)
+      shp <- sf::st_read(request) # data.frame not tibble
+
+      shp <- shp[match(fips, shp$FIPS), ]
+      shp$FIPS <- fips # now include the original fips in output even for rows that came back NA / empty polygon
+
+      shp<-EJAM:::shapefile_dropcols(shp)
+      shp<-shapefile_addcols(shp) # Use shapefile_addcols() above
+      shp<-EJAM:::shapefile_sortcols(shp)
+
+      to_map<-shp
+    }
+  }
+
+  # Get submitted polygon shape to appear in report map.
   if (method == "SHP"){
     to_map<-geojson_sf(area) # TBD: get this returned from ejamit_interface
     to_map$ejam_uniq_id <- 1 # Might run into issues here for multisite reports
   }
-  
+
   # Generate and return the HTML report.
-  ejam2report(result, sitenumber = 1, return_html = TRUE, launch_browser = FALSE, submitted_upload_method = method, shp=to_map)
+  ejam2report(result, sitenumber = 1, return_html = TRUE, launch_browser = FALSE, submitted_upload_method = method, shp=to_map,
+    report_title="EJSCREEN Community Report")
+  
+
 }
 
 #* Serve static assets from the ./assets directory
