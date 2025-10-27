@@ -3,4 +3,5 @@
 .RData
 .Ruserdata
 EJAM-API.Rproj
-/tests
+/tests/.venv
+logs.txt
