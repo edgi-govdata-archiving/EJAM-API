@@ -5,3 +5,4 @@
 EJAM-API.Rproj
 /tests/.venv
 logs.txt
+.DS_Store
