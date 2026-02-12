@@ -164,7 +164,7 @@ function(lat = NULL, lon = NULL, shape = NULL, fips = NULL, buffer = 3, res) {
   }
 
   # Generate and return the HTML report.
-  ejam2report(result, sitenumber = 1, return_html = TRUE, launch_browser = FALSE, submitted_upload_method = method, shp=to_map,
+  ejam2report(result, sitenumber = 1, return_html = TRUE, launch_browser = FALSE, site_method = method, shp=to_map,
     report_title="EJSCREEN Community Report")
 }
 

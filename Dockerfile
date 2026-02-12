@@ -14,6 +14,7 @@ RUN apt-get update && \
     software-properties-common \
     wget \
     gnupg \
+    unzip \
     ca-certificates \
     locales \
     # --- EJAM-required libraries ---
@@ -81,8 +82,8 @@ RUN apt-get update && \
 
 # Download 'EJAM' and install its remaining dependencies from binary repos
 RUN \
-    # Get EJAM R package (v2.32.6.003)
-    wget -c https://github.com/ejanalysis/EJAM/archive/refs/tags/v2.32.6.003.tar.gz -O - | tar -xz && \
+    # Get EJAM R package (v2.32.7)
+    wget -c https://github.com/ejanalysis/EJAM/archive/refs/tags/v2.32.7.tar.gz -O - | tar -xz && \
     \
     # Install remaining dependencies from RStudio's binary repo
     # This includes packages like 'shinytest2' and 'webshot' that were not in apt
@@ -90,11 +91,11 @@ RUN \
     # We use MAKEFLAGS="-j1" to force single-core compilation, saving memory.
     MAKEFLAGS="-j1" R -e " \
         install.packages(c('shinytest2', 'webshot'), repos=c('https://packagemanager.rstudio.com/all/__linux__/jammy/latest')); \
-        remotes::install_local('/EJAM-2.32.6.003', dependencies=TRUE, upgrade='always', build=FALSE, repos=c('https://packagemanager.rstudio.com/all/__linux__/jammy/latest'), INSTALL_opts=c('--preclean', '--no-multiarch', '--with-keep.source')) \
+        remotes::install_local('/EJAM-2.32.7', dependencies=TRUE, upgrade='always', build=FALSE, repos=c('https://packagemanager.rstudio.com/all/__linux__/jammy/latest'), INSTALL_opts=c('--preclean', '--no-multiarch', '--with-keep.source')) \
     " && \
     \
     # Clean up the downloaded source directory
-    rm -rf /EJAM-2.32.6.003
+    rm -rf /EJAM-2.32.7
 
 # Set the environment back to default
 ENV DEBIAN_FRONTEND=dialog
