@@ -1,7 +1,7 @@
 # Written with assistance from Google Gemini
 
 # Use Ubuntu 22.04 (Jammy Jellyfish) as the base image
-FROM ubuntu:22.04
+FROM --platform=linux/amd64 ubuntu:22.04
 
 # Set DEBIAN_FRONTEND to noninteractive to avoid prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -40,9 +40,10 @@ RUN apt-get update && \
 # Create a Chrome Wrapper Script
 # pagedown ignores CHROMOTE_EXTRA_ARGS, so Chrome crashes immediately in Docker without sandboxing.
 # This wrapper intercepts calls to Chrome and forces the required Docker flags on every execution.
-RUN echo '#!/bin/bash\nexec /usr/bin/google-chrome-stable --no-sandbox --disable-dev-shm-usage "$@"' > /usr/local/bin/google-chrome && \
+RUN echo '#!/bin/bash\nexec /usr/bin/google-chrome-stable --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-allow-origins=* "$@"' > /usr/local/bin/google-chrome && \
     chmod +x /usr/local/bin/google-chrome && \
-    echo 'CHROMOTE_CHROME=/usr/local/bin/google-chrome' >> /etc/R/Renviron.site
+    echo 'CHROMOTE_CHROME=/usr/local/bin/google-chrome' >> /etc/R/Renviron.site && \
+    echo 'CHROMOTE_HOST=127.0.0.1' >> /etc/R/Renviron.site
 
 # EJAM version: this ARG is the ONE place that sets which tagged EJAM release is installed.
 # Override at build time without editing this file, e.g.:
