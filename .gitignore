@@ -6,3 +6,6 @@ EJAM-API.Rproj
 /tests/.venv
 logs.txt
 .DS_Store
+.python-version
+uv.lock
+pyproject.toml
